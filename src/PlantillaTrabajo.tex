@@ -140,10 +140,31 @@
             \textbf{Callee Map:} Estando en esta pestaña, el usuario se puede desplazar en la lista de Flat Profile y se
             puede ver en Callee Map las funciones que son llamados y cuál función contiene a cuál función a medida
             que se desplaza en Flat Profile.
+
             \textbf{Source Code:}Muestra la función que se le esté haciendo el profiling, dicha función se encarga de llamar
-            las otras dos funciones, por lo tanto es la que consume más ciclos de reloj en ejecución diferente al main
-            \textbf{Callees:}
-            \textbf{All Callers:}
+            las otras dos funciones, por lo tanto, es la que consume más ciclos de reloj en ejecución diferente al main
+
+            \textbf{Callees:}Muestra la siguiente función que será llamada con, por esta razón cuando se selecciona la
+            función add y mult no muestra nada en la pestaña \textit{Callees}
+
+            \textbf{All Callers:}En esta pestaña se puede ver la diferencia entre Incl y self, la diferencia entre ellas
+            se trata de atributos de costos para las funciones relativas a algún tipo de evento. Como las funciones pueden
+            llamarse entre sí, tiene sentido distinguir el costo de la propia función (``Costo propio") y el coste que
+            incluye todas las funciones llamadas (``Costo inclusivo"). A veces también se habla de costos $``propios"$ como
+            costos ``exclusivos"\footnote{Esta definición fue tomada del manual de Kcachegrind}.
+
+\section{Profiling de un programa con Fuga de Memoria}
+        \subsection{Compilación}
+        \subsubsection{¿Qué hace este programa memoryleak.c?}
+Se importan los ficheros de cabecera pertinentes para usar las funciones requeridas en el programa. La cabecera $<stdio.h>$, se
+encarga de manejar las entradas y salidas del programa, $<stdlib.h>$ se encarga de la generación de los numeros aleatorios
+y reservar memoria  $<time.h>$ contiene funciones para el manejo y conversión de fechas y horas entre diferentes formatos.
+
+
+
+
+
+
 
 
 \newpage
