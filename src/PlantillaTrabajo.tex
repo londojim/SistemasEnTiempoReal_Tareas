@@ -102,13 +102,13 @@
 
 \section{Profiling de un programa de prueba}
     \subsection{Compilación}
-    \subsubsection{Qué hace el programa \textit{prueba.c}}
-        Se importa la biblioteca $<valgrind/callgrind.h>$, es la que se encarga de ejecutar los comandos
-        $CALLGRIND\_START\_INSTRUMENTATION$ y\\
-        $CALLGRIND\_STOP\_INSTRUMENTATION$. El programa consta de tres funciones enteras que retornan las operaciones
-        correspondientes. la función int add() retorna la suma de la variable val de cero hasta 799, la función int mult()
-        retorna la multiplicación de la variable val de cero hasta 799, la función foo() retorna el valor de la función
-        add() dos veces más la función mult()
+        \subsubsection{Qué hace el programa \textit{prueba.c}}
+            Se importa la biblioteca $<valgrind/callgrind.h>$, es la que se encarga de ejecutar los comandos
+            $CALLGRIND\_START\_INSTRUMENTATION$ y\\
+            $CALLGRIND\_STOP\_INSTRUMENTATION$. El programa consta de tres funciones enteras que retornan las operaciones
+            correspondientes. la función int add() retorna la suma de la variable val de cero hasta 799, la función int mult()
+            retorna la multiplicación de la variable val de cero hasta 799, la función foo() retorna el valor de la función
+            add() dos veces más la función mult()
     
     \subsubsection{¿Cuál es el papel que desempeña el $\#include <valgrind/callgrind.h>$, así como las instrucciones de
         preprocesamiento\\
@@ -141,28 +141,100 @@
             puede ver en Callee Map las funciones que son llamados y cuál función contiene a cuál función a medida
             que se desplaza en Flat Profile.
 
-            \textbf{Source Code:}Muestra la función que se le esté haciendo el profiling, dicha función se encarga de llamar
+            \textbf{Source Code:} Muestra la función que se le esté haciendo el profiling, dicha función se encarga de llamar
             las otras dos funciones, por lo tanto, es la que consume más ciclos de reloj en ejecución diferente al main
 
-            \textbf{Callees:}Muestra la siguiente función que será llamada con, por esta razón cuando se selecciona la
+            \textbf{Callees:} Muestra la siguiente función que será llamada con, por esta razón cuando se selecciona la
             función add y mult no muestra nada en la pestaña \textit{Callees}
 
-            \textbf{All Callers:}En esta pestaña se puede ver la diferencia entre Incl y self, la diferencia entre ellas
+            \textbf{All Callers:} En esta pestaña se puede ver la diferencia entre Incl y self, la diferencia entre ellas
             se trata de atributos de costos para las funciones relativas a algún tipo de evento. Como las funciones pueden
             llamarse entre sí, tiene sentido distinguir el costo de la propia función (``Costo propio") y el coste que
             incluye todas las funciones llamadas (``Costo inclusivo"). A veces también se habla de costos $``propios"$ como
             costos ``exclusivos"\footnote{Esta definición fue tomada del manual de Kcachegrind}.
 
 \section{Profiling de un programa con Fuga de Memoria}
-        \subsection{Compilación}
-        \subsubsection{¿Qué hace este programa memoryleak.c?}
-Se importan los ficheros de cabecera pertinentes para usar las funciones requeridas en el programa. La cabecera $<stdio.h>$, se
-encarga de manejar las entradas y salidas del programa, $<stdlib.h>$ se encarga de la generación de los numeros aleatorios
-y reservar memoria  $<time.h>$ contiene funciones para el manejo y conversión de fechas y horas entre diferentes formatos.
+\subsection{Compilación}
+\subsubsection{¿Qué hace este programa memoryleak.c?}
+    Se importan los ficheros de cabecera pertinentes para usar las funciones requeridas en el programa. La cabecera $<stdio.h>$, se
+    encarga de manejar las entradas y salidas del programa, $<stdlib.h>$ se encarga de la generación de los numeros aleatorios
+    y reservar memoria  $<time.h>$ contiene funciones para el manejo y conversión de fechas y horas entre diferentes formatos.
 
+    Se reserva un espacio de memoria  con la instrucción malloc, con el ciclo for, se inicializa el espacio de memoria que se
+    reservó anteriormente, con la instrucción srand (time(NULL)), se inicializa el generador de números aleatorios para poder
+    almacenarlos en la variable \textbf{randNum}, luego ese número se ubica en el arreglo que se reservo en el espacio de memoria
+    y se imprime la posición y valor que tiene esa posición.
 
+\subsubsection{Consulte e indique qué hace las opciones --leak-check=full}
+Da detalles de cada bloque definitivamente perdido o posiblemente perdido,incluyendo dónde fue asignado. (En realidad, combina los resultados de todos los bloques que tienen el mismo tipo de fuga y
+trazas del stack suficientemente similares en un único ``registro de pérdidas".\footnote{Esta definición fue tomada del manual de Valgrind}
 
-srand (time(NULL));       [Instrucción que inicializa el generador de números aleatorios]
+\subsubsection{Explique la salida obtenida luego de ejecutar el anterior comando. Qué falla presenta el programa memoryleak.c?}
+Se está reservando un bloque de memoria con la instrucción \textbf{int *intArray = malloc(sizeof(int) * ARR\_SIZE);} y en ningún
+momento se esté liberando la memoria, por lo tanto el programa en algún momento va a colapsar por falta de memoria para
+ejecutarse.
+
+\subsubsection{Resuelva la falla de memoria presentada.}
+Se libera la memoria con la instrucción $free(intArray);$ y la ejecutar nuevamente la instrucción $valgrind --leak-check=full ./memoryleak$
+se tiene como resultado: ``\textcolor{red}{==3880== For lists of detected and suppressed errors, rerun with: -s
+==3880== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)}''
+
+\subsubsection{¿Cuál es el lugar adecuado para colocar estas dos instrucciones?}
+\begin{lstlisting}
+    int *intArray = malloc(sizeof(int) * ARR_SIZE);
+
+CALLGRIND_START_INSTRUMENTATION;
+	for (int i = 0; i < ARR_SIZE; i++)
+	{
+		intArray[i] = i;
+	}
+	srand(time(NULL));
+CALLGRIND_STOP_INSTRUMENTATION;
+\end{lstlisting}
+
+se elige este lugar para hacer el profiling, ya que, viendo el código se puede observar que es la parte donde se hará
+más uso de los ciclos del reloj.
+
+\subsubsection{En su análisis, interprete los datos numéricos presentados sobre dicho grafo.}
+
+\begin{figure}[H]
+	\centering
+    \begin{subfigure}[b]{0.45\linewidth}
+        \includegraphics[width=\linewidth,angle=0]{imagen/memory}
+        \caption{Call Graph Memory}
+        \label{fig:memory}
+    \end{subfigure}
+    
+    \begin{subfigure}[b]{0.45\linewidth}
+        \includegraphics[width=\linewidth,angle=0]{imagen/memoryCod}
+	    \caption{Source Code}
+        \label{fig:memoryCod}
+    \end{subfigure}
+    \caption{Análisis del Código}
+	
+\end{figure}
+Si se observa la figura~\ref{fig:memoryCod}, se puede apreciar la cantidad de ciclos de reloj en el bucle For y en la inicialización
+del puntero.
+
+\subsubsection{Análisis de Callee Map, Source Code, Machine Code, Callees, All Callers, con relación al programa
+            \textit{Memoryleak}}
+
+            \textbf{Callee Map:} Estando en esta pestaña, se observa las funciones que se encuentran en el análisis del
+            profiling, allí se puede observar cuantos ciclos de reloj consume cada función, que librerias propias del SO linux
+            \textcolor{red}{\faLinux} esta usando y código fuente y cabeceras del \textbf{lenguaje C}
+
+            \textbf{Source Code:} Muestra la función que se le esté haciendo el profiling, dicha función se encarga de llamar
+            las otras dos funciones, por lo tanto, es la que consume más ciclos de reloj en ejecución diferente al main
+
+            \textbf{Callees:} Muestra la siguiente función que será llamada con, por esta razón cuando se selecciona la
+            función add y mult no muestra nada en la pestaña \textit{Callees}
+
+            \textbf{All Callers:} En esta pestaña se puede ver la diferencia entre Incl y self, la diferencia entre ellas
+            se trata de atributos de costos para las funciones relativas a algún tipo de evento. Como las funciones pueden
+            llamarse entre sí, tiene sentido distinguir el costo de la propia función (``Costo propio") y el coste que
+            incluye todas las funciones llamadas (``Costo inclusivo"). A veces también se habla de costos $``propios"$ como
+            costos ``exclusivos"\footnote{Esta definición fue tomada del manual de Kcachegrind}.
+
 
 
 
